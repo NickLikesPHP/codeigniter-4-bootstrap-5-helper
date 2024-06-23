@@ -3,9 +3,11 @@
 use CodeIgniter\CodeIgniter;
 
 function bs_nav_item(string $page_url, string $nav_item_text, array $options = null): string {
+    $extenal_link = $options['external-link'] ?? false;
+    $after_a_tag = $options['after-a-tag'] ?? '';
     $disabled = $options['disabled'] ?? false;
     $is_current_page = ($page_url == uri_string());
-    $href = base_url($page_url);
+    $href = ($extenal_link == false) ? base_url($page_url) : $page_url;
 
     // Handle 'nav-link' classes and attributes
     $a_additional_classes = $options['a_classes'] ?? '';
@@ -23,9 +25,40 @@ function bs_nav_item(string $page_url, string $nav_item_text, array $options = n
     $li_attributes = array_merge(['class' => trim($li_classes)], $li_extra_attributes);
 
     // Build 'li' tag
-    $li_tag = bs_html_builder('li', $a_tag, $li_attributes);
+    $li_tag = bs_html_builder('li', $a_tag . $after_a_tag , $li_attributes);
 
     return $li_tag;
+}
+
+// ==================================================
+
+function bs_nav_item_basic_menu(string $page_url, string $nav_item_text, array $menu_items = [], array $options = null): string {
+    $options['after-a-tag']  = '<ul class="ps-4 list-unstyled">';
+    foreach($menu_items as $menu_item){
+        $menu_item_options =  $menu_item['options'] ?? null;
+        $options['after-a-tag'] .= bs_nav_item($menu_item['url'], $menu_item['text'], $menu_item_options);
+    }
+    $options['after-a-tag'] .= '</ul>';
+    return bs_nav_item($page_url, $nav_item_text, $options);
+}
+
+// ==================================================
+
+function bs_nav_item_basic_menu_uri_toggle(string $page_url, string $nav_item_text, array $menu_items = [], array $options = null): string {
+    $extenal_link = $options['external-link'] ?? false;
+    if($extenal_link == false){
+        $page_url_array = explode('/', $page_url);
+        $page_url_first = reset($page_url_array);
+        
+        $uri_array = explode('/', uri_string());
+        $uri_first = reset($uri_array);
+        
+        $menu_array = (strcasecmp($page_url_first, $uri_first) === 0) ? $menu_items : [];
+        
+        return bs_nav_item_basic_menu($page_url, $nav_item_text, $menu_array, $options);
+    }else{
+        throw new \Exception('Cannot use the function with external links.');
+    }
 }
 
 // ==================================================
@@ -60,6 +93,14 @@ function bs_nav_dropdown(string $dropdown_url, string $dropdown_text, array $dro
     $nav_item = bs_html_builder('li', $nav_link . $dropdown_menu, ['class' => 'nav-item dropdown']);
     
     return $nav_item;
+}
+
+// ==================================================
+
+function bs_icon(string $class, array $options = null): string{
+    $options['tag'] = $options['tag'] ?? "i";
+    $options['additional_classes'] = isset($options['additional_classes']) ? " " . $options['additional_classes'] : "";
+    return "<{$options['tag']} class=\"bi bi-{$class}{$options['additional_classes']}\"></{$options['tag']}>";
 }
 
 // ==================================================
